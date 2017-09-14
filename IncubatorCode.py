@@ -31,10 +31,10 @@ class Incubator(Ui_MainWindow):
         self.logo.mousePressEvent = self.back_door
         self.welcome_thread.start()
 
-    def show_start_screen(self):
+    def show_start_screen(self, message="Powering off, To turn back on, remove power and re-apply power"):
         self.widget_1.hide()
         self.widget_6.show()
-        self.maintext_2.setText("Powering off, To turn back on, remove power and re-apply power")
+        self.maintext_2.setText(message)
         self.main_thread.stop()
         self.statusbar.clearMessage()
 
