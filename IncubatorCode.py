@@ -1,3 +1,4 @@
+import subprocess
 import sys,os,os.path,datetime, time
 from PyQt4 import QtCore, QtGui
 from IncubatorGUI import Ui_MainWindow
@@ -21,14 +22,17 @@ class Incubator(Ui_MainWindow):
         self.main_thread.signalRefuseStart.connect(self.show_start_screen)
         self.main_thread.signalStartIncubation.connect(self.incubation_progress)
         self.main_thread.incubation_thread.signalUpdate.connect(self.update_bar)
-        self.main_thread.incubation_thread.EggRolling.signalRollingStarted.connect(self.update_statusbar)
-        self.main_thread.incubation_thread.EggRolling.signalRollingFinished.connect(self.update_statusbar)
+        self.main_thread.incubation_thread.EggRolling.signalRollingUpdate.connect(self.update_statusbar)
+        self.main_thread.incubation_thread.signalStatusBarUpdate.connect(self.update_statusbar)
+        self.main_thread.incubation_thread.signalMainTextUpdate.connect(self.update_main_message)
+        self.countClicks = 0 #Clicks to close the Program
+        self.logo.mousePressEvent = self.back_door
         self.welcome_thread.start()
 
-    def show_start_screen(self):
+    def show_start_screen(self, message="Powering off, To turn back on, remove power and re-apply power"):
         self.widget_1.hide()
         self.widget_6.show()
-        self.maintext_2.setText("Powering off, To turn back on, remove power and re-apply power")
+        self.maintext_2.setText(message)
         self.main_thread.stop()
         self.statusbar.clearMessage()
 
@@ -51,6 +55,13 @@ class Incubator(Ui_MainWindow):
         self.pushButton_2.setEnabled(True)
         self.pushButton_3.setEnabled(False)
 
+    def back_door(self, event):
+        self.countClicks += 1
+        if self.countClicks ==4: #Number of Clicks to Restart the Pi
+            self.show_start_screen(message="Restarting Raspberry Pi ...")
+            print(["sudo", "reboot"])
+            #subprocess.Popen(["sudo", "reboot"])
+
     def update_bar(self, values):
         self.T_label.setText("T: {} F".format(str(values["T"])))
         self.H_label.setText("| H: {}% RH".format(str(values["H"])))
@@ -70,7 +81,8 @@ class Incubator(Ui_MainWindow):
         self.statusbar.showMessage(values[0], values[1])
 
     def preheat_start(self):
-        print(self.dateTimeEdit.dateTime().toPyDateTime())
+        print(["sudo","timedatectl","set-time","'"+str(self.dateTimeEdit.dateTime().toPyDateTime())+"'"])
+        #subprocess.Popen(["sudo","timedatectl","set-time","'"+str(self.dateTimeEdit.dateTime().toPyDateTime())+"'"])
         self.widget_5.hide()
         self.maintext.setText("Preheating Incubator, Please Wait to Set Eggs")
         self.widget_1.show()
@@ -96,6 +108,10 @@ class Incubator(Ui_MainWindow):
         self.pushButton_2.setEnabled(False)
         self.pushButton_3.setEnabled(True)
         self.return_normal_buttons()
+
+    def update_main_message(self,values):
+        if values[0]==str(self.maintext.text()):
+            self.maintext.setText(values[1])
 
     def set_time(self):
         self.pushButton_1.setEnabled(True)

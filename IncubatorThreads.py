@@ -3,32 +3,8 @@ from datetime import datetime,timedelta
 from PyQt4 import QtCore, QtGui
 from IncubatorPeripherals import Peripherals
 
-class TimerThread(QtCore.QThread):
-    signalTimerDone = QtCore.pyqtSignal()
-    def __init__(self, delta = [0,0]):
-        QtCore.QThread.__init__(self)
-        self.startTime = None
-        self.endTime = None
-        self.deltaTime = delta
-    def __del__(self):
-        self.quit()
-        self.wait()
-    def stop(self):
-        self.terminate()
-    def hours_minutes(self, td):
-        return [ td.seconds // 3600, (td.seconds // 60) % 60 ]
-    def run(self):
-        self.startTime = datetime.now()
-        self.endTime = self.startTime + timedelta(hours=self.deltaTime[0],minutes=self.deltaTime[1])
-        self.currentDifference = self.hours_minutes(self.endTime - datetime.now())
-        while self.currentDifference[0] > 0 or self.currentDifference[1] > 0 :
-            time.sleep(1)
-            self.currentDifference = self.hours_minutes(self.endTime - datetime.now())
-        self.signalTimerDone.emit()
-
 class EggRollingThread(QtCore.QThread):
-    signalRollingStarted = QtCore.pyqtSignal(list)
-    signalRollingFinished = QtCore.pyqtSignal(list)
+    signalRollingUpdate = QtCore.pyqtSignal(list)
     def __init__(self, myPeripheral):
         QtCore.QThread.__init__(self)
         self.myPeripheral = myPeripheral
@@ -38,17 +14,20 @@ class EggRollingThread(QtCore.QThread):
     def stop(self):
         self.terminate()
     def run(self):
-        self.signalRollingStarted.emit(["Egg Rolling in Progress",0])
+        self.signalRollingUpdate.emit(["Egg Rolling in Progress",3000])
         self.myPeripheral.set_servo(1)
         self.myPeripheral.forward()
-        time.sleep(1)
+        self.sleep(1)
+        self.signalRollingUpdate.emit(["Egg Rolling in Progress", 3000])
         self.myPeripheral.backward()
-        time.sleep(1)
+        self.sleep(1)
+        self.signalRollingUpdate.emit(["Egg Rolling in Progress", 3000])
         self.myPeripheral.forward()
-        time.sleep(1)
+        self.sleep(1)
+        self.signalRollingUpdate.emit(["Egg Rolling in Progress", 3000])
         self.myPeripheral.backward()
         self.myPeripheral.set_servo(0)
-        self.signalRollingFinished.emit(["Egg Rolling Finished",3000])
+        self.signalRollingUpdate.emit(["Egg Rolling Finished",3000])
 
 class PreheatThread(QtCore.QThread):
     signalPreHeatDone = QtCore.pyqtSignal()
@@ -71,16 +50,19 @@ class PreheatThread(QtCore.QThread):
         return current_values
     def run(self):
         self.myPeripheral.read_sensor()
-        while self.myPeripheral.get_temp()<85.5: #99.5
+        while self.myPeripheral.get_temp()<99.5: #99.5
             if self.myPeripheral.get_heat_status()!=1:
                 self.myPeripheral.set_heat(1)
                 self.myPeripheral.set_fan(1)
             self.signalUpdate.emit(self.get_current_values())
-            time.sleep(1)
+            self.msleep(500)
+            if self.get_current_values()["T"]>=99.5:
+                self.msleep(200)
+                self.signalUpdate.emit(self.get_current_values())
         self.myPeripheral.set_heat(0)
         self.myPeripheral.set_fan(1)
         self.signalUpdate.emit(self.get_current_values())
-        time.sleep(5)
+        self.sleep(5)
         self.myPeripheral.set_fan(0)
         self.signalUpdate.emit(self.get_current_values())
         self.signalPreHeatDone.emit()
@@ -88,15 +70,14 @@ class PreheatThread(QtCore.QThread):
 class IncubationProcessThread(QtCore.QThread):
     signalIncubationDone = QtCore.pyqtSignal()
     signalUpdate = QtCore.pyqtSignal(dict)
+    signalStatusBarUpdate = QtCore.pyqtSignal(list)
+    signalMainTextUpdate = QtCore.pyqtSignal(list)
     def __init__(self, myPeripheral):
         QtCore.QThread.__init__(self)
         self.myPeripheral = myPeripheral
         self.EggRolling = EggRollingThread(self.myPeripheral)
-        self.startDate = datetime.now()
-        self.endDate = self.startDate + timedelta(days=21)
-        self.cycleCounter = 0
-        self.lastTimeFanOn = datetime.now()
-        self.lastTimeMotorOn = datetime.now()
+        self.lowerTemp = 98.5
+        self.upperTemp = 100.5
     def __del__(self):
         self.quit()
         self.wait()
@@ -115,13 +96,29 @@ class IncubationProcessThread(QtCore.QThread):
         current_values["T2G"] = self.days_hours_minutes(self.endDate - datetime.now())
         return current_values
     def run(self):
+        self.startDate = datetime.now()
+        self.endDate = self.startDate + timedelta(days=21)
+        self.cycleCounter = 0
+        self.lastTimeFanOn = self.startDate
+        self.lastTimeMotorOn = self.startDate
         while self.days_hours_minutes(self.endDate - datetime.now())[0] > 0:
             self.signalUpdate.emit(self.get_current_values())
-            if self.myPeripheral.get_temp() < 84.5: #98.5
+            if (datetime.now() - self.startDate).days >=7:
+                if datetime.now().hour>=2 and datetime.now().hour<4:
+                    self.lowerTemp = 70.0
+                    self.upperTemp = 75.0
+                    self.signalMainTextUpdate.emit(["Incubation In Progress...",
+                                                    "Incubation In Progress...\nDaily Cool Down Cycle Active"])
+                else:
+                    self.lowerTemp = 98.5
+                    self.upperTemp = 100.5
+                    self.signalMainTextUpdate.emit(["Incubation In Progress...\nDaily Cool Down Cycle Active",
+                                                    "Incubation In Progress..."])
+            if self.myPeripheral.get_temp() < self.lowerTemp:
                 self.myPeripheral.set_heat(1)
                 self.myPeripheral.set_fan(1)
                 self.lastTimeFanOn = datetime.now()
-            elif self.myPeripheral.get_temp() > 86.5: #100.5
+            elif self.myPeripheral.get_temp() > self.upperTemp:
                 self.myPeripheral.set_heat(0)
                 self.myPeripheral.set_fan(1)
                 self.lastTimeFanOn = datetime.now()
@@ -130,17 +127,22 @@ class IncubationProcessThread(QtCore.QThread):
                     self.myPeripheral.set_fan(1)
                     self.cycleCounter += 1
                     self.lastTimeFanOn = datetime.now()
-                elif self.cycleCounter > 0 and self.cycleCounter < 11: #Number of Sec. while the Fan On
+                elif self.cycleCounter > 0 and self.cycleCounter < 21: #Number of Sec. while the Fan On (2 Cycle/Sec * 10 Sec = 20)
                     self.cycleCounter += 1
                 else:
                     self.cycleCounter = 0
                     self.myPeripheral.set_heat(0)
                     self.myPeripheral.set_fan(0)
             self.signalUpdate.emit(self.get_current_values())
+            if self.myPeripheral.get_hum() < 40.0:
+                self.signalStatusBarUpdate.emit(["Wet Sponges to Raise Humidity",2000])
+            elif self.myPeripheral.get_hum() > 60.0:
+                self.signalStatusBarUpdate.emit(["Humidity is Very High", 2000])
             if self.days_hours_minutes(datetime.now() - self.lastTimeMotorOn)[1] >= 5: #Number of hours to wait before Rolling Eggs
                 self.lastTimeMotorOn = datetime.now()
                 self.EggRolling.start()
-            time.sleep(1)
+            self.msleep(500) #2 Cycle/Sec
+            self.signalUpdate.emit(self.get_current_values())
 
 class IncubationThread(QtCore.QThread):
     signalStart = QtCore.pyqtSignal()
@@ -166,7 +168,7 @@ class IncubationThread(QtCore.QThread):
         self.preheat_thread.stop()
         self.incubation_thread.stop()
         self.myPeripheral.clean_pins()
-        self.myPeripheral.pi.stop()
+        #self.myPeripheral.pi.stop()
         self.terminate()
     def wait_signal(self, signal_1, signal_2=None, signal_3=None, timeout=None):
         loop = QtCore.QEventLoop()
@@ -206,7 +208,7 @@ class IncubationThread(QtCore.QThread):
                 return_value = self.wait_signal(self.signalFirst, self.signalSecond, None, None)
                 if return_value == 2: #If user Refuse the Cancel
                     self.preheat_thread.signalPreHeatDone.emit()
-                    time.sleep(0.1)
+                    self.msleep(100)
                     return_value = self.wait_signal(self.signalFirst, self.signalThird, None, None)
                 elif return_value == 1: #If user Accept the Cancel
                     self.signalRefuseStart.emit()
@@ -220,7 +222,7 @@ class IncubationThread(QtCore.QThread):
                 return_value = self.wait_signal(self.signalFirst, self.signalSecond, None, None)
                 if return_value == 2:  # If user Refuse the Cancel
                     self.signalStartIncubation.emit()
-                    time.sleep(0.1)
+                    self.msleep(100)
                     return_value = self.wait_signal(self.incubation_thread.signalIncubationDone, self.signalThird, None, None)
                 elif return_value == 1:  # If user Accept the Cancel
                     self.signalRefuseStart.emit()
@@ -236,5 +238,5 @@ class WelcomeThread(QtCore.QThread):
         self.quit()
         self.wait()
     def run(self):
-        time.sleep(2)
+        self.sleep(2)
         self.signalInit.emit()
