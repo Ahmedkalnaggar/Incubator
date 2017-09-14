@@ -1,4 +1,4 @@
-import Adafruit_DHT
+import DHT22
 import pigpio,time
 
 class Peripherals:
@@ -6,52 +6,29 @@ class Peripherals:
         self.heat_status = 1
         self.fan_status = 1
         self.servo_status = 1
-        self.DHT_TYPE = Adafruit_DHT.DHT22
         self.DHT_PIN = 6
         self.FAN_PIN = 12
         self.HEAT_PIN = 16
         self.SERVO_POWER_PIN = 26
         self.SERVO_CONTROLE_PIN = 13
         self.pi = pigpio.pi()
+        self.DHT_Sensor = DHT22.sensor(self.pi, self.DHT_PIN, LED=None, power=None)
         self.setup_pins()
         self.clean_pins()
-        self.init_sensors()
-    def init_sensors(self):
-        loopFlag = True
-        while loopFlag:
-            tempValue = [0,0]
-            for i in range(2):
-                currentHum,currentTemp = self.read_sensor_loop()
-                tempValue[i] = currentTemp
-            if abs(tempValue[0]-tempValue[1])<3:
-                self.temp = currentTemp
-                self.humidity = currentHum
-                loopFlag = False
-            else:
-                continue
-    def read_sensor_loop(self):
-        while True:
-            currentHum, currentTemp = Adafruit_DHT.read(self.DHT_TYPE, self.DHT_PIN)
-            if currentHum != None and currentTemp != None:
-                currentTemp = self.round_temp(currentTemp)
-                currentHum = self.round_hum(currentHum)
-                break
-        return currentHum,currentTemp
+        self.read_sensor()
     def read_sensor(self):
-        while True:
-            currentHum, currentTemp = Adafruit_DHT.read(self.DHT_TYPE, self.DHT_PIN)
-            if currentHum != None and currentTemp != None and abs(self.round_temp(currentTemp)-self.temp)<3:
-                self.temp = self.round_temp(currentTemp)
-                self.humidity = self.round_hum(currentHum)
-                break
+        self.DHT_Sensor.trigger()
+        time.sleep(0.2)
+        self.temp = self.round_temp(self.DHT_Sensor.temperature())
+        self.humidity = self.round_hum(self.DHT_Sensor.humidity())
     def get_temp(self):
         return self.temp
     def round_temp(self, inputTemp):
-        return round(inputTemp * 9 / 5 + 32, 1)  # Convert to F
+        return round((inputTemp * 9 / 5 + 32) * 1.00, 1)  # Convert to F and Factor
     def get_hum(self):
         return self.humidity
     def round_hum(self, inputHum):
-        return round(inputHum, 1)  # Convert to F
+        return round(inputHum * 1.00, 1)  # Factor
     def get_heat_status(self):
         return self.heat_status
     def get_fan_status(self):

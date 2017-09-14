@@ -54,11 +54,8 @@ class PreheatThread(QtCore.QThread):
             if self.myPeripheral.get_heat_status()!=1:
                 self.myPeripheral.set_heat(1)
                 self.myPeripheral.set_fan(1)
+            self.sleep(3)
             self.signalUpdate.emit(self.get_current_values())
-            self.msleep(500)
-            if self.get_current_values()["T"]>=99.5:
-                self.msleep(200)
-                self.signalUpdate.emit(self.get_current_values())
         self.myPeripheral.set_heat(0)
         self.myPeripheral.set_fan(1)
         self.signalUpdate.emit(self.get_current_values())
@@ -116,8 +113,8 @@ class IncubationProcessThread(QtCore.QThread):
         self.cycleCounter = 0
         self.lastTimeFanOn = self.startDate
         self.lastTimeMotorOn = self.startDate
+        self.signalUpdate.emit(self.get_current_values())
         while self.days_hours_minutes(self.endDate - datetime.now())[0] > 3:
-            self.signalUpdate.emit(self.get_current_values())
             if (datetime.now() - self.startDate).days >=7:
                 if datetime.now().hour>=2 and datetime.now().hour<4:
                     self.lowerTemp = 70.0
@@ -140,13 +137,12 @@ class IncubationProcessThread(QtCore.QThread):
                     self.myPeripheral.set_fan(1)
                     self.cycleCounter += 1
                     self.lastTimeFanOn = datetime.now()
-                elif self.cycleCounter > 0 and self.cycleCounter < 21: #Number of Sec. while the Fan On (2 Cycle/Sec * 10 Sec = 20)
+                elif self.cycleCounter > 0 and self.cycleCounter < 6: #Number of Cycles while the Fan On
                     self.cycleCounter += 1
                 else:
                     self.cycleCounter = 0
                     self.myPeripheral.set_heat(0)
                     self.myPeripheral.set_fan(0)
-            self.signalUpdate.emit(self.get_current_values())
             if self.myPeripheral.get_hum() < 40.0:
                 self.signalStatusBarUpdate.emit(["Wet Sponges to Raise Humidity",2000])
             elif self.myPeripheral.get_hum() > 60.0:
@@ -154,15 +150,15 @@ class IncubationProcessThread(QtCore.QThread):
             if self.days_hours_minutes(datetime.now() - self.lastTimeMotorOn)[1] >= 5: #Number of hours to wait before Rolling Eggs
                 self.lastTimeMotorOn = datetime.now()
                 self.EggRolling.start()
-            self.msleep(500) #2 Cycle/Sec
+            self.sleep(3)
             self.signalUpdate.emit(self.get_current_values())
         self.signal_18_ask.emit()
         self.wait_signal(self.signal_18_continue)
         self.lowerTemp = 98.5
         self.upperTemp = 100.5
         self.cycleCounter = 0
+        self.signalUpdate.emit(self.get_current_values())
         while self.days_hours_minutes(self.endDate - datetime.now())[0] > 0:
-            self.signalUpdate.emit(self.get_current_values())
             if self.myPeripheral.get_temp() < self.lowerTemp:
                 self.myPeripheral.set_heat(1)
                 self.myPeripheral.set_fan(1)
@@ -176,23 +172,22 @@ class IncubationProcessThread(QtCore.QThread):
                     self.myPeripheral.set_fan(1)
                     self.cycleCounter += 1
                     self.lastTimeFanOn = datetime.now()
-                elif self.cycleCounter > 0 and self.cycleCounter < 21: #Number of Sec. while the Fan On (2 Cycle/Sec * 10 Sec = 20)
+                elif self.cycleCounter > 0 and self.cycleCounter < 6: #Number of Cycles while the Fan On
                     self.cycleCounter += 1
                 else:
                     self.cycleCounter = 0
                     self.myPeripheral.set_heat(0)
                     self.myPeripheral.set_fan(0)
-            self.signalUpdate.emit(self.get_current_values())
             if self.myPeripheral.get_hum() < 70.0:
                 self.signalStatusBarUpdate.emit(["Wet Sponges to Raise Humidity",2000])
             elif self.myPeripheral.get_hum() > 90.0:
                 self.signalStatusBarUpdate.emit(["Humidity is Very High", 2000])
-            self.msleep(500) #2 Cycle/Sec
+            self.sleep(3)
             self.signalUpdate.emit(self.get_current_values())
         messageCounter = 0
         messageRepeat = 0
+        self.signalUpdate.emit(self.get_current_values())
         while True:
-            self.signalUpdate.emit(self.get_current_values())
             if self.myPeripheral.get_temp() < self.lowerTemp:
                 self.myPeripheral.set_heat(1)
                 self.myPeripheral.set_fan(1)
@@ -206,25 +201,21 @@ class IncubationProcessThread(QtCore.QThread):
                     self.myPeripheral.set_fan(1)
                     self.cycleCounter += 1
                     self.lastTimeFanOn = datetime.now()
-                elif self.cycleCounter > 0 and self.cycleCounter < 21: #Number of Sec. while the Fan On (2 Cycle/Sec * 10 Sec = 20)
+                elif self.cycleCounter > 0 and self.cycleCounter < 6:
                     self.cycleCounter += 1
                 else:
                     self.cycleCounter = 0
                     self.myPeripheral.set_heat(0)
                     self.myPeripheral.set_fan(0)
-            self.signalUpdate.emit(self.get_current_values())
             if self.myPeripheral.get_hum() < 70.0:
                 self.signalStatusBarUpdate.emit(["Wet Sponges to Raise Humidity",2000])
             elif self.myPeripheral.get_hum() > 90.0:
                 self.signalStatusBarUpdate.emit(["Humidity is Very High", 2000])
-            messageRepeat += 1
-            if messageRepeat > 6:
-                messageRepeat = 0
-                self.signalMainTextUpdate.emit(self.messageList[messageCounter])
-                messageCounter += 1
-                if messageCounter >= len(self.messageList):
-                    messageCounter = 0
-            self.msleep(500) #2 Cycle/Sec
+            self.signalMainTextUpdate.emit(self.messageList[messageCounter])
+            messageCounter += 1
+            if messageCounter >= len(self.messageList):
+                messageCounter = 0
+            self.sleep(3)
             self.signalUpdate.emit(self.get_current_values())
 
 class IncubationThread(QtCore.QThread):
@@ -251,6 +242,7 @@ class IncubationThread(QtCore.QThread):
         self.preheat_thread.stop()
         self.incubation_thread.stop()
         self.myPeripheral.clean_pins()
+        self.myPeripheral.DHT_Sensor.cancel()
         self.myPeripheral.pi.stop()
         self.terminate()
     def wait_signal(self, signal_1, signal_2=None, signal_3=None, timeout=None):
