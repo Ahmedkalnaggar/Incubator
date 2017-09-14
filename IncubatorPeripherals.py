@@ -47,11 +47,11 @@ class Peripherals:
     def get_temp(self):
         return self.temp
     def round_temp(self, inputTemp):
-        return round((inputTemp * 9 / 5 + 32) * 0.974, 1)  # Convert to F
+        return round(inputTemp * 9 / 5 + 32, 1)  # Convert to F
     def get_hum(self):
         return self.humidity
     def round_hum(self, inputHum):
-        return round(inputHum * 1.374, 1)  # Convert to F
+        return round(inputHum, 1)  # Convert to F
     def get_heat_status(self):
         return self.heat_status
     def get_fan_status(self):
