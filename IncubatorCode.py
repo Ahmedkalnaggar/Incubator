@@ -71,7 +71,8 @@ class Incubator(Ui_MainWindow):
         if self.countClicks ==4: #Number of Clicks to Restart the Pi
             self.show_start_screen(message="Restarting Raspberry Pi ...")
             #print(["sudo", "reboot"])
-            subprocess.Popen(["sudo", "reboot"])
+            subprocess.Popen(["sudo", "shutdown", "-r", "-f", "now"],
+                             stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True)
 
     def update_bar(self, values):
         self.T_label.setText("T: {} F".format(str(values["T"])))
@@ -93,7 +94,8 @@ class Incubator(Ui_MainWindow):
 
     def preheat_start(self):
         #print(["sudo","timedatectl","set-time","'"+str(self.dateTimeEdit.dateTime().toPyDateTime())+"'"])
-        subprocess.Popen(["sudo","timedatectl","set-time","'"+str(self.dateTimeEdit.dateTime().toPyDateTime())+"'"])
+        subprocess.Popen(["sudo","timedatectl","set-time","'"+str(self.dateTimeEdit.dateTime().toPyDateTime())+"'"],
+                         stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True)
         self.widget_5.hide()
         self.maintext.setText("Preheating Incubator, Please Wait to Set Eggs")
         self.widget_1.show()
