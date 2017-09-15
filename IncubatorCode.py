@@ -71,8 +71,8 @@ class Incubator(Ui_MainWindow):
         if self.countClicks ==4: #Number of Clicks to Restart the Pi
             self.show_start_screen(message="Restarting Raspberry Pi ...")
             #print(["sudo", "reboot"])
-            subprocess.Popen(["sudo", "shutdown", "-r", "-f", "now"],
-                             stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True)
+            #subprocess.Popen(["sudo", "shutdown", "-r", "-f", "now"],stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True)
+            os.system("shutdown -r now")
 
     def update_bar(self, values):
         self.T_label.setText("T: {} F".format(str(values["T"])))
