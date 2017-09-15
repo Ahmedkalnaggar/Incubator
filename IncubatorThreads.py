@@ -242,7 +242,7 @@ class IncubationThread(QtCore.QThread):
         self.preheat_thread.stop()
         self.incubation_thread.stop()
         self.myPeripheral.clean_pins()
-        self.myPeripheral.DHT_Sensor.cancel()
+        #self.myPeripheral.DHT_Sensor.cancel()
         self.myPeripheral.pi.stop()
         self.terminate()
     def wait_signal(self, signal_1, signal_2=None, signal_3=None, timeout=None):
