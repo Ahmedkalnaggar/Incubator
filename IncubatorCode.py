@@ -93,8 +93,8 @@ class Incubator(Ui_MainWindow):
         self.statusbar.showMessage(values[0], values[1])
 
     def preheat_start(self):
-        #print(["sudo","timedatectl","set-time","'"+str(self.dateTimeEdit.dateTime().toPyDateTime())+"'"])
-        os.system("timedatectl set-time '"+str(self.dateTimeEdit.dateTime().toPyDateTime())+"'")
+        #print(["timedatectl","set-time","'"+str(self.dateTimeEdit.dateTime().toPyDateTime())+"'"])
+        #os.system("timedatectl set-time '"+str(self.dateTimeEdit.dateTime().toPyDateTime())+"'")
         self.widget_5.hide()
         self.maintext.setText("Preheating Incubator, Please Wait to Set Eggs")
         self.widget_1.show()

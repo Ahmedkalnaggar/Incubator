@@ -17,10 +17,7 @@ class Peripherals:
         self.clean_pins()
         self.read_sensor()
     def read_sensor(self):
-        try:
-            self.DHT_Sensor.trigger()
-        except:
-            print("Error")
+        self.DHT_Sensor.trigger()
         time.sleep(0.2)
         self.temp = self.round_temp(self.DHT_Sensor.temperature())
         self.humidity = self.round_hum(self.DHT_Sensor.humidity())
