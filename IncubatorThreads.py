@@ -121,7 +121,10 @@ class IncubationProcessThread(QtCore.QThread):
                     self.upperTemp = 75.0
                     self.signalMainTextUpdate.emit("Incubation In Progress...\nDaily Cool Down Cycle Active")
                 else:
-                    self.lowerTemp = 98.5
+                    if self.myPeripheral.get_heat_status():
+                        self.lowerTemp = 99.5
+                    else:
+                        self.lowerTemp = 98.5
                     self.upperTemp = 100.5
                     self.signalMainTextUpdate.emit("Incubation In Progress...")
             if self.myPeripheral.get_temp() < self.lowerTemp:
@@ -189,7 +192,6 @@ class IncubationProcessThread(QtCore.QThread):
             self.sleep(3)
             self.signalUpdate.emit(self.get_current_values())
         messageCounter = 0
-        messageRepeat = 0
         self.signalUpdate.emit(self.get_current_values())
         while True:
             if self.myPeripheral.get_temp() < self.lowerTemp:
