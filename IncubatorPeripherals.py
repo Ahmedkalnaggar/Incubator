@@ -59,10 +59,10 @@ class Peripherals:
         self.set_fan(0)
         self.set_heat(0)
     def forward(self):
-        for i in range(1000, 1851, 1):
+        for i in range(1000, 2001, 1):
             self.pi.set_PWM_dutycycle(self.SERVO_CONTROLE_PIN, i)
             time.sleep(0.01)
     def backward(self):
-        for i in range(1850, 999, -1):
+        for i in range(2000, 999, -1):
             self.pi.set_PWM_dutycycle(self.SERVO_CONTROLE_PIN, i)
             time.sleep(0.01)
