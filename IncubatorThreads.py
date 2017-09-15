@@ -127,6 +127,7 @@ class IncubationProcessThread(QtCore.QThread):
             if self.myPeripheral.get_temp() < self.lowerTemp:
                 self.myPeripheral.set_heat(1)
                 self.myPeripheral.set_fan(1)
+                self.lowerTemp = 99.5
                 self.lastTimeFanOn = datetime.now()
             elif self.myPeripheral.get_temp() > self.upperTemp:
                 self.myPeripheral.set_heat(0)
@@ -143,6 +144,7 @@ class IncubationProcessThread(QtCore.QThread):
                     self.cycleCounter = 0
                     self.myPeripheral.set_heat(0)
                     self.myPeripheral.set_fan(0)
+                    self.lowerTemp = 98.5
             if self.myPeripheral.get_hum() < 40.0:
                 self.signalStatusBarUpdate.emit(["Wet Sponges to Raise Humidity",2000])
             elif self.myPeripheral.get_hum() > 60.0:
@@ -162,6 +164,7 @@ class IncubationProcessThread(QtCore.QThread):
             if self.myPeripheral.get_temp() < self.lowerTemp:
                 self.myPeripheral.set_heat(1)
                 self.myPeripheral.set_fan(1)
+                self.lowerTemp = 99.5
                 self.lastTimeFanOn = datetime.now()
             elif self.myPeripheral.get_temp() > self.upperTemp:
                 self.myPeripheral.set_heat(0)
@@ -178,6 +181,7 @@ class IncubationProcessThread(QtCore.QThread):
                     self.cycleCounter = 0
                     self.myPeripheral.set_heat(0)
                     self.myPeripheral.set_fan(0)
+                    self.lowerTemp = 98.5
             if self.myPeripheral.get_hum() < 70.0:
                 self.signalStatusBarUpdate.emit(["Wet Sponges to Raise Humidity",2000])
             elif self.myPeripheral.get_hum() > 90.0:
@@ -191,6 +195,7 @@ class IncubationProcessThread(QtCore.QThread):
             if self.myPeripheral.get_temp() < self.lowerTemp:
                 self.myPeripheral.set_heat(1)
                 self.myPeripheral.set_fan(1)
+                self.lowerTemp = 99.5
                 self.lastTimeFanOn = datetime.now()
             elif self.myPeripheral.get_temp() > self.upperTemp:
                 self.myPeripheral.set_heat(0)
@@ -207,6 +212,7 @@ class IncubationProcessThread(QtCore.QThread):
                     self.cycleCounter = 0
                     self.myPeripheral.set_heat(0)
                     self.myPeripheral.set_fan(0)
+                    self.lowerTemp = 98.5
             if self.myPeripheral.get_hum() < 70.0:
                 self.signalStatusBarUpdate.emit(["Wet Sponges to Raise Humidity",2000])
             elif self.myPeripheral.get_hum() > 90.0:
